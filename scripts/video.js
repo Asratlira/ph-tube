@@ -12,13 +12,66 @@ const loadCatagories = () => {
     .then((res) => res.json())
     .then((data) => displayCategories(data.categories));
 };
-const loadVideos = () => {
-  fetch("https://openapi.programming-hero.com/api/phero-tube/videos")
+const loadVideos = (textVideo = "") => {
+  fetch(
+    `https://openapi.programming-hero.com/api/phero-tube/videos?title=${textVideo}`
+  )
     .then((res) => res.json())
     .then((data) => displayVideo(data.videos));
 };
+
+const removeActiveRemove = () => {
+  const buttons = document.getElementsByClassName(" category-btn");
+  console.log(buttons);
+  for (const btn of buttons) {
+    btn.classList.remove("active");
+  }
+};
+
+const categoriesVideoId = (id) => {
+  // alert(id);
+  fetch(`https://openapi.programming-hero.com/api/phero-tube/category/${id}`)
+    .then((res) => res.json())
+    .then((data) => {
+      removeActiveRemove();
+      const btnActive = document.getElementById(`btn-${id}`);
+      btnActive.classList.add("active");
+      displayVideo(data.category);
+    });
+};
+const videoDetails = async (videoID) => {
+  console.log(videoID);
+  const res = await fetch(
+    `https://openapi.programming-hero.com/api/phero-tube/video/${videoID}`
+  );
+  const data = await res.json();
+  displayDetails(data.video);
+};
+const displayDetails = (video) => {
+  console.log(video);
+  const modalDetailsContainer = document.getElementById("modal-container");
+  modalDetailsContainer.innerHTML = `
+  <img src='${video.thumbnail}'/>
+  <p> ${video.description}</p>
+  
+  `;
+  document.getElementById("modal_btn").click();
+};
+
 const displayVideo = (videos) => {
   const videoContainer = document.getElementById("videos");
+  videoContainer.innerHTML = "";
+  videoContainer.classList.remove("grid");
+  if (videos.length == 0) {
+    videoContainer.innerHTML = `
+    <div class='flex flex-col justify-center items-center gap-5'><img src='./Icon.png'
+    <h2 class='text-xl font-bold text-center'>No content Here </h2> </div>
+    
+    `;
+  } else {
+    videoContainer.classList.add("grid");
+  }
+
   videos.forEach((video) => {
     const card = document.createElement("div");
     card.classList = "card card-compact";
@@ -31,7 +84,7 @@ const displayVideo = (videos) => {
       ${
         video.others.posted_date?.length == 0
           ? ""
-          : `<span class='absolute right-2 bottom-2 bg-black text-white rounded p-1'>${getTimeString(
+          : `<span class='absolute text-xs right-2 bottom-2 bg-black text-white rounded p-1'>${getTimeString(
               video.others.posted_date
             )} </span>`
       }
@@ -45,7 +98,7 @@ const displayVideo = (videos) => {
   </div>
   <div>
   <h2 class='font-bold'> ${video.title} </h2> 
-  </div>
+  
   <div class='flex items-center gap-3'>
   <p class='text-gray-400'>${video.authors[0].profile_name}</p>
   ${
@@ -53,7 +106,10 @@ const displayVideo = (videos) => {
       ? `<img class='w-5' src='https://img.icons8.com/?size=48&id=63760&format=png'`
       : ""
   }
-  
+  </div>
+  <p><button onclick="videoDetails('${video.video_id}'
+    
+  )"class='btn btn-sm btn-error'> Details </button></p>
   </div>
     
   </div>`;
@@ -64,10 +120,16 @@ const displayVideo = (videos) => {
 const displayCategories = (categories) => {
   const categorieContainer = document.getElementById("categories");
   categories.forEach((item) => {
-    const button = document.createElement("button");
-    button.classList = "btn";
-    button.innerText = item.category;
-    categorieContainer.append(button);
+    const buttonContainer = document.createElement("div");
+    buttonContainer.innerHTML = `
+     <button class='btn category-btn' id='btn-${item.category_id}' onclick='categoriesVideoId(${item.category_id})'>${item.category}
+     </button>
+    `;
+
+    categorieContainer.append(buttonContainer);
+  });
+  document.getElementById("input-search").addEventListener("keyup", (e) => {
+    loadVideos(e.target.value);
   });
 };
 loadCatagories();
